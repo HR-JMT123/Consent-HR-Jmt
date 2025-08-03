@@ -173,11 +173,11 @@
             position: 'center', icon: 'success', title: 'บันทึกข้อมูลสำเร็จ!',
             text: 'ข้อมูลของคุณถูกบันทึกในระบบเรียบร้อยแล้ว', showConfirmButton: false, timer: 2500
           }).then(() => {
-            if(liff.isInClient()) {
-              liff.closeWindow();
-            } else {
-              window.location.reload();
-            }
+           if(liff.isInClient()) {
+  window.location.reload(); // <--- แก้เป็นคำสั่งนี้
+} else {
+  window.location.reload();
+}
           });
           
         } else if (data.error === 'duplicate') {
@@ -202,4 +202,3 @@
 
 </body>
 </html>
-
