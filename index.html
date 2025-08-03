@@ -13,7 +13,6 @@
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
   <style>
-    /* ---- Custom Styles (เหมือนเดิม ไม่ต้องเปลี่ยน) ---- */
     body { font-family: 'Kanit', sans-serif; background-image: url('https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=2029&auto=format&fit=crop'); background-size: cover; background-position: center; background-repeat: no-repeat; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 1rem; }
     .register-card { background-color: rgba(255, 255, 255, 0.95); border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); border: none; display: flex; flex-direction: row; max-width: 900px; width: 100%; }
     .register-image-side { background: url('https://img5.pic.in.th/file/secure-sv1/-Live---appsheet.png') center/cover; width: 45%; }
@@ -35,7 +34,7 @@
   <div class="register-image-side"></div>
   <div class="register-form-side">
     <div class="text-center mb-4">
-      <h3 class="card-title">ยืนยันตัวตนพนักงาน</h3>
+      <h3 class="card-title">ยืนยันตัวตนเพื่อรับข่าวสารจากบริษัท</h3>
       <p class="card-subtitle">กรุณากรอกข้อมูลและยืนยันตัวตนผ่านอีเมล</p>
     </div>
 
@@ -51,7 +50,7 @@
         <label for="IdEmployee" class="form-label">รหัสพนักงาน</label>
         <div class="input-group">
           <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-id-card"></i></span></div>
-          <input type="text" class="form-control" id="IdEmployee" placeholder="Employee ID" name="รหัสพนักงาน">
+          <input type="text" class="form-control" id="IdEmployee" placeholder="Employee ID" name="รหัสพนักงาน" required>
         </div>
       </div>
       <div class="mb-3">
@@ -89,9 +88,8 @@
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-  // --- LIFF & Form Setup (เหมือนเดิม) ---
   async function main() {
-    await liff.init({ liffId: "1654380017-Jj6lnbYq" });
+    await liff.init({ liffId: "1654380017-Jj6lnbYq" }); // ◀️ **สำคัญ:** ใส่ LIFF ID ของคุณที่นี่
     if (!liff.isLoggedIn()) {
       liff.login();
     } else {
@@ -101,46 +99,47 @@
   }
   main();
 
-  const scriptURL = 'https://script.google.com/macros/s/AKfycbyKUKXwQkFLWKtjGviyupatLvSKpz4bpczYC1n2QjAZdxJjrgWCdl9tV-NHVE6fBxuS/exec';
+  const scriptURL = 'https://script.google.com/macros/s/AKfycby4A-9Ft4Oy_g1skWuxY3gixmvcXqx59KVkCyxhqvsLiqBJHc_b-j2MyHlCdZ5-2cdP/exec'; // ◀️ **สำคัญ:** ใช้ URL ที่ได้จากการ Deploy ของคุณ
   const form = document.forms['hello-sheet'];
   const sendOtpBtn = document.getElementById('sendOtpBtn');
   const registerBtn = document.getElementById('registerBtn');
   const otpGroup = document.getElementById('otp-group');
   const emailInput = document.getElementById('email');
 
-  // --- *** 1. เหตุการณ์เมื่อกดปุ่ม "ขอรหัส OTP" *** ---
+  // --- ✨ 1. เหตุการณ์เมื่อกดปุ่ม "ขอรหัส OTP" (แก้ไขแล้ว) ---
   sendOtpBtn.addEventListener('click', e => {
       e.preventDefault();
       
-      // ตรวจสอบว่ากรอกข้อมูลครบถ้วนหรือยัง (ยกเว้น OTP)
       if (!form.checkValidity()) {
-          Swal.fire('ข้อมูลไม่ครบถ้วน', 'กรุณากรอกข้อมูลที่จำเป็น (*) ให้ครบถ้วนก่อน', 'warning');
+          Swal.fire('ข้อมูลไม่ครบถ้วน', 'กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วนก่อน', 'warning');
           return;
       }
       
       Swal.fire({
-          title: 'กำลังส่ง OTP...',
-          text: `ระบบกำลังส่งรหัสไปยัง ${emailInput.value}`,
+          title: 'กำลังตรวจสอบข้อมูล...',
+          text: `ระบบกำลังตรวจสอบรหัสพนักงานและเตรียมส่ง OTP...`,
           allowOutsideClick: false,
           didOpen: () => { Swal.showLoading(); }
       });
       
       const formData = new FormData(form);
-      formData.append('action', 'sendOTP'); // ระบุ action
+      formData.append('action', 'sendOTP');
 
       fetch(scriptURL, { method: 'POST', body: formData })
           .then(response => response.json())
           .then(data => {
               if (data.result === 'success') {
                   Swal.fire('ส่ง OTP สำเร็จ!', 'กรุณาตรวจสอบรหัสในอีเมลของคุณ (รหัสมีอายุ 5 นาที)', 'success');
-                  // เปลี่ยน UI เป็นโหมดกรอก OTP
                   sendOtpBtn.style.display = 'none';
                   registerBtn.style.display = 'inline-block';
                   otpGroup.style.display = 'block';
-                  emailInput.readOnly = true; // ไม่ให้แก้ไขอีเมล
-                  
-                  // ✨ แก้ไข: เพิ่ม thuộc tính "required" ให้ช่อง OTP ณ จุดนี้
+                  emailInput.readOnly = true; 
+                  document.getElementById('IdEmployee').readOnly = true;
                   document.getElementById('otp').required = true;
+
+              } else if (data.error === 'invalid_employee_id') {
+                  // --- เพิ่มการจัดการข้อผิดพลาดสำหรับรหัสพนักงาน ---
+                  Swal.fire('รหัสพนักงานไม่ถูกต้อง', 'ไม่พบรหัสพนักงานของคุณในระบบ กรุณาตรวจสอบอีกครั้ง', 'error');
 
               } else {
                   throw new Error(data.error || 'ไม่สามารถส่ง OTP ได้');
@@ -148,11 +147,11 @@
           })
           .catch(error => {
               console.error('Error sending OTP!', error.message);
-              Swal.fire('เกิดข้อผิดพลาด!', 'ไม่สามารถส่ง OTP ได้ กรุณาตรวจสอบอีเมลและลองใหม่อีกครั้ง', 'error');
+              Swal.fire('เกิดข้อผิดพลาด!', 'ไม่สามารถส่ง OTP ได้ กรุณาตรวจสอบข้อมูลและลองใหม่อีกครั้ง', 'error');
           });
   });
 
-  // --- *** 2. เหตุการณ์เมื่อกดปุ่ม "ลงทะเบียน" (Submit Form) *** ---
+  // --- 2. เหตุการณ์เมื่อกดปุ่ม "ลงทะเบียน" (Submit Form) (ไม่ต้องแก้ไข) ---
   form.addEventListener('submit', e => {
     e.preventDefault();
 
@@ -164,7 +163,7 @@
     });
     
     const formData = new FormData(form);
-    formData.append('action', 'register'); // ระบุ action
+    formData.append('action', 'register');
 
     fetch(scriptURL, { method: 'POST', body: formData })
       .then(response => response.json())
@@ -174,18 +173,22 @@
             position: 'center', icon: 'success', title: 'บันทึกข้อมูลสำเร็จ!',
             text: 'ข้อมูลของคุณถูกบันทึกในระบบเรียบร้อยแล้ว', showConfirmButton: false, timer: 2500
           }).then(() => {
-            // ปิดหน้าต่าง LIFF หลังจากบันทึกสำเร็จ
             if(liff.isInClient()) {
               liff.closeWindow();
             } else {
-              window.location.reload(); // ถ้าไม่ได้เปิดใน LINE ให้รีโหลดหน้า
+              window.location.reload();
             }
           });
           
         } else if (data.error === 'duplicate') {
           Swal.fire('ลงทะเบียนแล้ว', 'คุณได้ยืนยันตัวตนไว้ในระบบแล้ว หากต้องการแก้ไขให้ติดต่อที่ฝ่ายบุคคล', 'warning');
+
         } else if (data.error === 'invalid_otp') {
           Swal.fire('OTP ไม่ถูกต้อง!', 'รหัส OTP ที่คุณกรอกไม่ถูกต้องหรือหมดอายุแล้ว กรุณาลองใหม่อีกครั้ง', 'error');
+        
+        } else if (data.error === 'invalid_employee_id') {
+          Swal.fire('รหัสพนักงานไม่ถูกต้อง', 'ไม่พบรหัสพนักงานของคุณในระบบ กรุณาตรวจสอบอีกครั้ง', 'error');
+
         } else {
           throw new Error(data.error || 'Something went wrong');
         }
@@ -198,5 +201,4 @@
 </script>
 
 </body>
-
 </html>
