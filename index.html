@@ -5,18 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HR-JMT</title>
 
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" integrity="sha512-xh6O/CkQoPOWDdYTDqeRdPCVd1SpvCA9XXcUnZS2FmJNp1coAFzvtCN9BmamE+4aHK8yyUHUSCcJHgXloTyT2A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
     <style>
-        /* --- CSS ที่ปรับปรุงใหม่ (โทนสีแดง) --- */
+        /* CSS ไม่มีการเปลี่ยนแปลง */
         body {
             font-family: 'Kanit', sans-serif;
-            /* เปลี่ยน Background Image เป็นโทนสีแดง */
             background-image: url('https://img2.pic.in.th/pic/blue-gradient-abstract-background-empty-room-with-space-your-text-picture.jpg');
             background-size: cover;
             background-position: center;
@@ -27,7 +26,6 @@
             min-height: 100vh;
             padding: 1rem;
         }
-
         .register-card {
             background-color: rgba(255, 255, 255, 0.95);
             border-radius: 20px;
@@ -39,72 +37,55 @@
             max-width: 900px;
             width: 100%;
         }
-
         .register-image-side {
-            /* เปลี่ยนรูปด้านข้างให้ดูเป็นทางการขึ้น */
             background: url('https://img2.pic.in.th/pic/Gemini_Generated_Image_rqnmqyrqnmqyrqnm.png') center/cover;
             width: 45%;
         }
-
         .register-form-side {
             width: 55%;
             padding: 3rem;
         }
-
         .card-title {
             font-weight: 700;
             color: #333;
             margin-bottom: 0.5rem;
         }
-
         .card-subtitle {
             color: #6c757d;
             margin-bottom: 2rem;
         }
-
         .form-label {
             font-weight: 500;
             color: #555;
         }
-
         .input-group-text {
             background-color: transparent;
             border-right: none;
-            /* เปลี่ยนสีไอคอนเป็นสีแดง */
             color: #dc3545;
         }
-
         .form-control {
             border-left: none;
             border-radius: 0 0.25rem 0.25rem 0;
             padding-left: 0;
             transition: all 0.3s ease;
         }
-
         .form-control:focus {
             box-shadow: none;
-            /* เปลี่ยนสี Border ตอน Focus เป็นสีแดง */
             border-color: #dc3545;
         }
-
         .btn-primary {
-            /* เปลี่ยน Gradient ของปุ่มเป็นโทนสีแดง */
             background: linear-gradient(45deg, #dc3545, #c82333);
             border: none;
             border-radius: 50px;
             padding: 12px 30px;
             font-weight: 700;
             transition: all 0.3s ease;
-            /* เปลี่ยนสีเงาของปุ่มเป็นโทนสีแดง */
             box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
         }
-
         .btn-primary:hover {
             transform: translateY(-2px);
-            /* เปลี่ยนสีเงาของปุ่มตอน Hover */
             box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
         }
-
         @media (max-width: 768px) {
             .register-image-side { display: none; }
             .register-form-side { width: 100%; padding: 2rem; }
@@ -163,7 +144,7 @@
             <input type="hidden" name="userID" id="userID">
 
             <div class="text-center mt-4">
-                <button type="button" class="btn btn-primary fw-bold w-50" id="sendOtpBtn">ขอรหัส OTP</button>
+                <button type="button" class="btn btn-primary fw-bold w-50" id="sendOtpBtn">ยืนยัน</button>
                 <button type="submit" class="btn btn-success fw-bold w-50" id="registerBtn" style="display: none;">ลงทะเบียน</button>
             </div>
         </form>
@@ -172,7 +153,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-    // --- ส่วนของ Javascript ไม่มีการเปลี่ยนแปลง ---
     async function main() {
         await liff.init({ liffId: "1654380017-Jj6lnbYq" }); // ◀️ **สำคัญ:** ใส่ LIFF ID ของคุณที่นี่
         if (!liff.isLoggedIn()) {
@@ -184,14 +164,14 @@
     }
     main();
 
-    const scriptURL = 'https://script.google.com/macros/s/AKfycby4A-9Ft4Oy_g1skWuxY3gixmvcXqx59KVkCyxhqvsLiqBJHc_b-j2MyHlCdZ5-2cdP/exec'; // ◀️ **สำคัญ:** ใช้ URL ที่ได้จากการ Deploy ของคุณ
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbxmkNHeWLWkmaX505Rw370vBeZfAHmggiSBJ1JbKjbZ-gapXLuQH0S1c8goK9Wg9AE1/exec'; // ◀️ **สำคัญ:** ใช้ URL ที่ได้จากการ Deploy ของคุณ
     const form = document.forms['hello-sheet'];
     const sendOtpBtn = document.getElementById('sendOtpBtn');
     const registerBtn = document.getElementById('registerBtn');
     const otpGroup = document.getElementById('otp-group');
     const emailInput = document.getElementById('email');
 
-    // --- 1. เหตุการณ์เมื่อกดปุ่ม "ขอรหัส OTP" ---
+    // --- 1. เหตุการณ์เมื่อกดปุ่ม "ยืนยัน(otp)" ---
     sendOtpBtn.addEventListener('click', e => {
         e.preventDefault();
         
@@ -202,7 +182,7 @@
         
         Swal.fire({
             title: 'กำลังตรวจสอบข้อมูล...',
-            text: `ระบบกำลังตรวจสอบรหัสพนักงานและเตรียมส่ง OTP...`,
+            text: `ระบบกำลังตรวจสอบข้อมูลและเตรียมส่ง OTP...`,
             allowOutsideClick: false,
             didOpen: () => { Swal.showLoading(); }
         });
@@ -222,6 +202,10 @@
                     document.getElementById('IdEmployee').readOnly = true;
                     document.getElementById('otp').required = true;
 
+                // --- ✨ [ปรับปรุง] เพิ่มการดักจับ Error เมื่อ userID ซ้ำ ---
+                } else if (data.error === 'duplicate_user') {
+                    Swal.fire('ลงทะเบียนแล้ว', 'คุณได้ยืนยันตัวตนไว้ในระบบแล้ว หากต้องการแก้ไขข้อมูลกรุณาติดต่อฝ่ายบุคคล', 'warning');
+
                 } else if (data.error === 'invalid_employee_id') {
                     Swal.fire('รหัสพนักงานไม่ถูกต้อง', 'ไม่พบรหัสพนักงานของคุณในระบบ กรุณาตรวจสอบอีกครั้ง', 'error');
 
@@ -236,6 +220,7 @@
     });
 
     // --- 2. เหตุการณ์เมื่อกดปุ่ม "ลงทะเบียน" (Submit Form) ---
+    // ส่วนนี้ปรับแก้ logic การดักจับ error ให้สอดคล้องกับฝั่ง server
     form.addEventListener('submit', e => {
         e.preventDefault();
 
@@ -264,7 +249,8 @@
                         }
                     });
                     
-                } else if (data.error === 'duplicate') {
+                // --- ✨ [ปรับปรุง] เปลี่ยนชื่อ error จาก duplicate เป็น duplicate_user เพื่อความสอดคล้องกัน ---
+                } else if (data.error === 'duplicate_user') {
                     Swal.fire('ลงทะเบียนแล้ว', 'คุณได้ยืนยันตัวตนไว้ในระบบแล้ว หากต้องการแก้ไขให้ติดต่อที่ฝ่ายบุคคล', 'warning');
 
                 } else if (data.error === 'invalid_otp') {
