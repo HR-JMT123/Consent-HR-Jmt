@@ -86,10 +86,45 @@
             transition: all 0.3s ease;
             box-shadow: 0 4px 15px rgba(30, 132, 73, 0.3);
         }
-        .btn-success:hover {
+        .btn-success:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(30, 132, 73, 0.4);
         }
+        .btn-success:disabled {
+            background: #a5d6a7;
+            cursor: not-allowed;
+        }
+        
+        /* ✨ [ปรับปรุง] CSS สำหรับส่วนยินยอมให้สวยงามขึ้น */
+        .consent-section {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-top: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: box-shadow 0.2s ease-in-out;
+        }
+        .consent-section:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .consent-title {
+            font-weight: 700;
+            color: #343a40;
+            font-size: 1rem;
+            margin-bottom: 0.75rem;
+        }
+        .custom-switch .custom-control-label {
+            color: #495057;
+            font-size: 0.9rem;
+            cursor: pointer; /* ทำให้รู้ว่าคลิกได้ทั้งข้อความ */
+        }
+        /* [ปรับปรุง] ปรับสีของ Toggle Switch ให้เข้ากับธีมสีเขียว */
+        .custom-control-input:checked~.custom-control-label::before {
+            border-color: #1E8449;
+            background-color: #28B463;
+        }
+        
         @media (max-width: 768px) {
             .register-image-side { display: none; }
             .register-form-side { width: 100%; padding: 2rem; }
@@ -133,8 +168,18 @@
             
             <input type="hidden" name="userID" id="userID">
 
+            <div class="consent-section">
+                <h5 class="consent-title"><i class="fa-solid fa-shield-halved"></i> ข้อกำหนดและความยินยอม</h5>
+                <div class="custom-control custom-switch">
+                    <input type="checkbox" class="custom-control-input" id="consentCheck" name="consent" required>
+                    <label class="custom-control-label" for="consentCheck">
+                        ข้าพเจ้ายินยอมให้บริษัทเก็บรวบรวม ใช้ เพื่อวัตถุประสงค์ในการยืนยันตัวตนพนักงานและแจ้งข่าวสารต่างๆ ผ่านช่องทางไลน์นี้
+                    </label>
+                </div>
+            </div>
+
             <div class="text-center mt-4">
-                <button type="submit" class="btn btn-success fw-bold w-100" id="registerBtn">บันทึกข้อมูล</button>
+                <button type="submit" class="btn btn-success fw-bold w-100" id="registerBtn" disabled>บันทึกข้อมูล</button>
             </div>
         </form>
     </div>
@@ -153,17 +198,33 @@
     }
     main();
 
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbxfguJAOC5A4YYC3LyNF2NpqVu9F-uFMQTjBj0LT0XjkIbVDu1KGx_LWfJEtotnPrR6/exec'; // ◀️ **สำคัญ:** ใช้ URL ที่ได้จากการ Deploy ของคุณ
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbxzgwortta3pnBsjj8IbSNUxamp3aWR8Ahj2pQLIWBLUlhGEhP48EF1Nwe4-_BpH-pU/exec'; // ◀️ **สำคัญ:** ใช้ URL ที่ได้จากการ Deploy ของคุณ
     const form = document.forms['hello-sheet'];
+    const registerBtn = document.getElementById('registerBtn');
+    const consentCheckbox = document.getElementById('consentCheck');
 
-    // --- ✨ [แก้ไข] เหตุการณ์เมื่อกดปุ่ม "ยืนยันและบันทึกข้อมูล" (Submit Form) ---
+    // ตรรกะสำหรับเปิด/ปิดปุ่มตามการยินยอม (ยังคงทำงานได้เหมือนเดิม)
+    consentCheckbox.addEventListener('change', function() {
+        if (this.checked) {
+            registerBtn.disabled = false;
+        } else {
+            registerBtn.disabled = true;
+        }
+    });
+
     form.addEventListener('submit', e => {
         e.preventDefault();
 
         // ตรวจสอบว่ากรอกข้อมูลครบหรือไม่
         if (!form.checkValidity()) {
-            Swal.fire('ข้อมูลไม่ครบถ้วน', 'กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วนก่อน', 'warning');
+            Swal.fire('ข้อมูลไม่ครบถ้วน', 'กรุณากรอกข้อมูลและทำเครื่องหมายยินยอมให้ครบถ้วนก่อน', 'warning');
             return;
+        }
+        
+        // ตรวจสอบการยินยอมอีกครั้ง (เผื่อกรณีที่ disabled ถูกแก้)
+        if (!consentCheckbox.checked) {
+             Swal.fire('ไม่ได้รับความยินยอม', 'กรุณาทำเครื่องหมายในช่องยินยอมให้ใช้ข้อมูลก่อนบันทึก', 'error');
+             return;
         }
 
         Swal.fire({
@@ -174,7 +235,7 @@
         });
         
         const formData = new FormData(form);
-        formData.append('action', 'register'); // ระบุ action สำหรับฝั่ง Apps Script
+        formData.append('action', 'register'); 
 
         fetch(scriptURL, { method: 'POST', body: formData })
             .then(response => response.json())
@@ -197,6 +258,9 @@
                 } else if (data.error === 'invalid_employee_id') {
                     Swal.fire('รหัสพนักงานไม่ถูกต้อง', 'ไม่พบรหัสพนักงานของคุณในระบบ กรุณาตรวจสอบอีกครั้ง', 'error');
 
+                } else if (data.error === 'consent_required') {
+                    Swal.fire('ไม่ได้รับความยินยอม', 'เกิดข้อผิดพลาด: กรุณาทำเครื่องหมายยินยอมก่อนบันทึก', 'error');
+                
                 } else {
                     throw new Error(data.error || 'Something went wrong');
                 }
@@ -210,4 +274,3 @@
 
 </body>
 </html>
-
