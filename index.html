@@ -72,6 +72,10 @@
             transition: all 0.3s ease;
             font-size: 1rem;
         }
+        .form-control:read-only {
+            background-color: #e9ecef;
+            cursor: not-allowed;
+        }
         .form-control:focus {
             box-shadow: none;
             border-color: #555;
@@ -94,8 +98,6 @@
             background: #a5d6a7;
             cursor: not-allowed;
         }
-        
-        /* ✨ [ปรับปรุง] CSS สำหรับส่วนยินยอมให้สวยงามขึ้น */
         .consent-section {
             background-color: #f8f9fa;
             border: 1px solid #e9ecef;
@@ -117,14 +119,12 @@
         .custom-switch .custom-control-label {
             color: #495057;
             font-size: 0.9rem;
-            cursor: pointer; /* ทำให้รู้ว่าคลิกได้ทั้งข้อความ */
+            cursor: pointer;
         }
-        /* [ปรับปรุง] ปรับสีของ Toggle Switch ให้เข้ากับธีมสีเขียว */
         .custom-control-input:checked~.custom-control-label::before {
             border-color: #1E8449;
             background-color: #28B463;
         }
-        
         @media (max-width: 768px) {
             .register-image-side { display: none; }
             .register-form-side { width: 100%; padding: 2rem; }
@@ -140,22 +140,22 @@
         <div class="text-center mb-4">
             <img src="https://img5.pic.in.th/file/secure-sv1/-1920-x-300-px.png" alt="Company Logo" style="max-width: 250px; margin-bottom: 1.5rem;">
             <h3 class="card-title">ยืนยันตัวตนพนักงาน</h3>
-            <p class="card-subtitle">กรุณากรอกข้อมูลให้ถูกต้อง!</p>
+            <p class="card-subtitle">กรุณากรอกข้อมูลด้วยไลน์ตัวเอง!</p>
         </div>
 
         <form method="post" autocomplete="off" name="hello-sheet" id="registerForm">
-            <div class="mb-3">
-                <label for="fullName" class="form-label">Full Name</label>
-                <div class="input-group">
-                    <div class="input-group-prepend"><span class="input-group-text"><i class="fa-solid fa-user"></i></span></div>
-                    <input type="text" class="form-control" id="fullName" placeholder="ชื่อ-สกุล" name="ชื่อ-สกุล" required>
-                </div>
-            </div>
             <div class="mb-3">
                 <label for="IdEmployee" class="form-label">Employee ID</label>
                 <div class="input-group">
                     <div class="input-group-prepend"><span class="input-group-text"><i class="fa-solid fa-id-card-clip"></i></span></div>
                     <input type="text" class="form-control" id="IdEmployee" placeholder="รหัสพนักงาน" name="รหัสพนักงาน" required>
+                </div>
+            </div>
+             <div class="mb-3">
+                <label for="fullName" class="form-label">Full Name</label>
+                <div class="input-group">
+                    <div class="input-group-prepend"><span class="input-group-text"><i class="fa-solid fa-user"></i></span></div>
+                    <input type="text" class="form-control" id="fullName" placeholder="ชื่อ-สกุล (จะแสดงอัตโนมัติเมื่อกรอกรหัสพนักงาน)" name="ชื่อ-สกุล" required>
                 </div>
             </div>
             <div class="mb-3">
@@ -198,30 +198,72 @@
     }
     main();
 
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbwWB2eDJKLCZDC_vT74IZHEzgQTupRugK1SYNogpHTC_a8kA3SvVLx5uMqdIZzjwpB4/exec'; // ◀️ **สำคัญ:** ใช้ URL ที่ได้จากการ Deploy ของคุณ
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbwL-Dgoy6so2-iMFSppikEhNuU-pLaVoYr5FbgE5hVUXntW1p0wsNtdQ_3AwfFJo6G8/exec'; // ◀️ **สำคัญ:** ใช้ URL ที่ได้จากการ Deploy ของคุณ
     const form = document.forms['hello-sheet'];
     const registerBtn = document.getElementById('registerBtn');
     const consentCheckbox = document.getElementById('consentCheck');
+    
+    const employeeIdInput = document.getElementById('IdEmployee');
+    const fullNameInput = document.getElementById('fullName');
 
-    // ตรรกะสำหรับเปิด/ปิดปุ่มตามการยินยอม (ยังคงทำงานได้เหมือนเดิม)
-    consentCheckbox.addEventListener('change', function() {
-        if (this.checked) {
-            registerBtn.disabled = false;
-        } else {
-            registerBtn.disabled = true;
+    // ✨ [แก้ไข] ฟังก์ชันดึงชื่อพนักงาน เพิ่มการจัดการกรณีรหัสซ้ำ
+    employeeIdInput.addEventListener('blur', function() {
+        const employeeId = this.value.trim();
+        if (employeeId === '') {
+            fullNameInput.value = '';
+            fullNameInput.readOnly = false;
+            return;
         }
+
+        const formData = new FormData();
+        formData.append('action', 'getEmployeeName');
+        formData.append('employeeId', employeeId);
+
+        Swal.fire({
+            title: 'กำลังตรวจสอบรหัสพนักงาน...',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading(); }
+        });
+
+        fetch(scriptURL, { method: 'POST', body: formData })
+            .then(response => response.json())
+            .then(data => {
+                Swal.close();
+                if (data.result === 'success') {
+                    fullNameInput.value = data.name;
+                    fullNameInput.readOnly = true;
+                // ✨ [เพิ่ม] จัดการกรณีพบรหัสพนักงานที่ลงทะเบียนแล้ว
+                } else if (data.error === 'duplicate_employee_id') {
+                    Swal.fire('ลงทะเบียนแล้ว', 'รหัสพนักงานนี้ได้ลงทะเบียนในระบบแล้ว', 'warning');
+                    fullNameInput.value = '';
+                    fullNameInput.readOnly = false;
+                } else {
+                    Swal.fire('ไม่พบข้อมูล', 'ไม่พบรหัสพนักงานนี้ในระบบ กรุณาตรวจสอบอีกครั้ง', 'error');
+                    fullNameInput.value = '';
+                    fullNameInput.readOnly = false;
+                }
+            })
+            .catch(error => {
+                Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้', 'error');
+                console.error('Error fetching employee name:', error);
+                fullNameInput.value = '';
+                fullNameInput.readOnly = false;
+            });
     });
 
+    consentCheckbox.addEventListener('change', function() {
+        registerBtn.disabled = !this.checked;
+    });
+
+    // ✨ [แก้ไข] ฟังก์ชัน submit เพิ่มการจัดการ error case รหัสพนักงานซ้ำ
     form.addEventListener('submit', e => {
         e.preventDefault();
 
-        // ตรวจสอบว่ากรอกข้อมูลครบหรือไม่
         if (!form.checkValidity()) {
             Swal.fire('ข้อมูลไม่ครบถ้วน', 'กรุณากรอกข้อมูลและทำเครื่องหมายยินยอมให้ครบถ้วนก่อน', 'warning');
             return;
         }
         
-        // ตรวจสอบการยินยอมอีกครั้ง (เผื่อกรณีที่ disabled ถูกแก้)
         if (!consentCheckbox.checked) {
              Swal.fire('ไม่ได้รับความยินยอม', 'กรุณาทำเครื่องหมายในช่องยินยอมให้ใช้ข้อมูลก่อนบันทึก', 'error');
              return;
@@ -254,6 +296,10 @@
                     
                 } else if (data.error === 'duplicate_user') {
                     Swal.fire('ลงทะเบียนแล้ว', 'คุณได้ยืนยันตัวตนไว้ในระบบแล้ว หากต้องการแก้ไขข้อมูลกรุณาติดต่อฝ่ายบุคคล', 'warning');
+                
+                // ✨ [เพิ่ม] จัดการกรณีรหัสพนักงานซ้ำ (เป็นการป้องกันขั้นที่สอง)
+                } else if (data.error === 'duplicate_employee_id') {
+                    Swal.fire('ลงทะเบียนแล้ว', 'รหัสพนักงานนี้ได้ถูกลงทะเบียนแล้ว กรุณาติดต่อฝ่ายบุคคล', 'error');
 
                 } else if (data.error === 'invalid_employee_id') {
                     Swal.fire('รหัสพนักงานไม่ถูกต้อง', 'ไม่พบรหัสพนักงานของคุณในระบบ กรุณาตรวจสอบอีกครั้ง', 'error');
@@ -274,4 +320,3 @@
 
 </body>
 </html>
-
