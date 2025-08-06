@@ -155,7 +155,7 @@
                 <label for="fullName" class="form-label">Full Name</label>
                 <div class="input-group">
                     <div class="input-group-prepend"><span class="input-group-text"><i class="fa-solid fa-user"></i></span></div>
-                    <input type="text" class="form-control" id="fullName" placeholder="ชื่อ-สกุล (จะแสดงอัตโนมัติเมื่อกรอกรหัสพนักงาน)" name="ชื่อ-สกุล" required>
+                    <input type="text" class="form-control" id="fullName" placeholder="ชื่อ-สกุล (จะแสดงอัตโนมัติเมื่อกรอกรหัสพนักงาน)" name="ชื่อ-สกุล" required readonly>
                 </div>
             </div>
             <div class="mb-3">
@@ -167,6 +167,29 @@
             </div>
             
             <input type="hidden" name="userID" id="userID">
+            
+            <div class="mb-3">
+                <label class="form-label">สแกนใบหน้า (ถ่ายรูป)</label>
+                <div id="camera-container" class="text-center bg-light p-2" style="border-radius: 10px; position: relative; overflow: hidden;">
+                    <video id="video" width="100%" height="auto" autoplay playsinline style="display: none; transform: scaleX(-1);"></video>
+                    <canvas id="canvas" style="display:none;"></canvas>
+                    <img id="face-overlay" 
+                         src="https://img2.pic.in.th/pic/-9fbd25e4342ef1a57.png" 
+                         alt="ตัวอย่างกรอบใบหน้า" 
+                         style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; display: none; pointer-events: none; opacity: 0.7;">
+                    <img id="photo-preview" src="" alt="รูปที่ถ่าย" style="max-width: 100%; border-radius: 10px; display: none; margin: auto;" />
+                    <div id="camera-placeholder">
+                          <i class="fas fa-camera fa-3x text-muted"></i>
+                          <p class="text-muted mt-2">กรุณากด 'เปิดกล้อง' เพื่อถ่ายรูป</p>
+                    </div>
+                </div>
+                <div class="text-center mt-2">
+                    <button type="button" id="start-camera-btn" class="btn btn-info btn-sm"> <i class="fas fa-camera"></i> เปิดกล้อง</button>
+                    <button type="button" id="capture-btn" class="btn btn-primary btn-sm" style="display: none;"> <i class="fas fa-circle-check"></i> ถ่ายรูป</button>
+                    <button type="button" id="retake-btn" class="btn btn-warning btn-sm" style="display: none;"> <i class="fas fa-redo"></i> ถ่ายใหม่</button>
+                </div>
+                <input type="hidden" name="รูปถ่ายใบหน้า" id="facePhotoData" required>
+            </div>
 
             <div class="consent-section">
                 <h5 class="consent-title"><i class="fa-solid fa-shield-halved"></i> ข้อกำหนดและความยินยอม</h5>
@@ -187,8 +210,9 @@
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
+    // --- LIFF Initialization ---
     async function main() {
-        await liff.init({ liffId: "1654380017-Jj6lnbYq" }); // ◀️ **สำคัญ:** ใส่ LIFF ID ของคุณที่นี่
+        await liff.init({ liffId: "" }); // ◀️ **สำคัญ:** ใส่ LIFF ID ของคุณที่นี่
         if (!liff.isLoggedIn()) {
             liff.login();
         } else {
@@ -198,20 +222,99 @@
     }
     main();
 
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbwL-Dgoy6so2-iMFSppikEhNuU-pLaVoYr5FbgE5hVUXntW1p0wsNtdQ_3AwfFJo6G8/exec'; // ◀️ **สำคัญ:** ใช้ URL ที่ได้จากการ Deploy ของคุณ
+    // --- Form & Sheet Configuration ---
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbxq--ttPvYyVJt42LQio3YRBdeNu0bRtJDdPGKb4KnyAnimZJtd8Po_Y-sjh7yx1opx/exec'; // ◀️ **สำคัญ:** ใช้ URL ที่ได้จากการ Deploy ของคุณ
     const form = document.forms['hello-sheet'];
     const registerBtn = document.getElementById('registerBtn');
     const consentCheckbox = document.getElementById('consentCheck');
-    
     const employeeIdInput = document.getElementById('IdEmployee');
     const fullNameInput = document.getElementById('fullName');
 
-    // ✨ [แก้ไข] ฟังก์ชันดึงชื่อพนักงาน เพิ่มการจัดการกรณีรหัสซ้ำ
+    // --- ✨ Camera Logic (แก้ไขให้ใช้เฉพาะกล้องหน้า) ---
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const facePhotoDataInput = document.getElementById('facePhotoData');
+    const photoPreview = document.getElementById('photo-preview');
+    const cameraPlaceholder = document.getElementById('camera-placeholder');
+    const faceOverlay = document.getElementById('face-overlay');
+
+    const startCameraBtn = document.getElementById('start-camera-btn');
+    const captureBtn = document.getElementById('capture-btn');
+    // const switchCameraBtn = document.getElementById('switch-camera-btn'); // ◀️ ลบตัวแปรนี้ออก
+    const retakeBtn = document.getElementById('retake-btn');
+
+    let currentStream;
+    // let facingMode = 'user'; // ◀️ ลบตัวแปรนี้ออก ไม่จำเป็นต้องสลับกล้องแล้ว
+
+    async function startCamera() {
+        if (currentStream) {
+            currentStream.getTracks().forEach(track => track.stop());
+        }
+        try {
+            const constraints = {
+                video: {
+                    // ◀️ **แก้ไข:** บังคับให้ใช้กล้องหน้าเสมอ
+                    facingMode: 'user', 
+                    width: { ideal: 480 },
+                    height: { ideal: 640 }
+                }
+            };
+            currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+            video.srcObject = currentStream;
+            video.style.display = 'block';
+            faceOverlay.style.display = 'block';
+            cameraPlaceholder.style.display = 'none';
+            startCameraBtn.style.display = 'none';
+            captureBtn.style.display = 'inline-block';
+            // switchCameraBtn.style.display = 'inline-block'; // ◀️ ลบบรรทัดนี้ออก
+            retakeBtn.style.display = 'none';
+            photoPreview.style.display = 'none';
+        } catch (err) {
+            console.error("Error accessing camera: ", err);
+            Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถเข้าถึงกล้องได้ กรุณาตรวจสอบการอนุญาตให้ใช้กล้อง', 'error');
+        }
+    }
+
+    startCameraBtn.addEventListener('click', startCamera);
+
+    // ◀️ ลบ Event Listener ของปุ่มสลับกล้องออกทั้งหมด
+    // switchCameraBtn.addEventListener('click', () => { ... });
+
+    captureBtn.addEventListener('click', () => {
+        const context = canvas.getContext('2d');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        
+        // Flip the canvas context horizontally to match the preview
+        context.translate(canvas.width, 0);
+        context.scale(-1, 1);
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        // Convert to Base64 and set value
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+        facePhotoDataInput.value = dataUrl;
+        photoPreview.src = dataUrl;
+
+        // Update UI
+        video.style.display = 'none';
+        faceOverlay.style.display = 'none';
+        photoPreview.style.display = 'block';
+        captureBtn.style.display = 'none';
+        // switchCameraBtn.style.display = 'none'; // ◀️ ลบบรรทัดนี้ออก
+        retakeBtn.style.display = 'inline-block';
+
+        // Stop camera stream
+        currentStream.getTracks().forEach(track => track.stop());
+    });
+    
+    retakeBtn.addEventListener('click', startCamera);
+
+    // --- Employee ID Verification ---
     employeeIdInput.addEventListener('blur', function() {
         const employeeId = this.value.trim();
         if (employeeId === '') {
             fullNameInput.value = '';
-            fullNameInput.readOnly = false;
+            fullNameInput.readOnly = true;
             return;
         }
 
@@ -232,43 +335,43 @@
                 if (data.result === 'success') {
                     fullNameInput.value = data.name;
                     fullNameInput.readOnly = true;
-                // ✨ [เพิ่ม] จัดการกรณีพบรหัสพนักงานที่ลงทะเบียนแล้ว
                 } else if (data.error === 'duplicate_employee_id') {
                     Swal.fire('ลงทะเบียนแล้ว', 'รหัสพนักงานนี้ได้ลงทะเบียนในระบบแล้ว', 'warning');
                     fullNameInput.value = '';
-                    fullNameInput.readOnly = false;
+                    fullNameInput.readOnly = true;
                 } else {
                     Swal.fire('ไม่พบข้อมูล', 'ไม่พบรหัสพนักงานนี้ในระบบ กรุณาตรวจสอบอีกครั้ง', 'error');
                     fullNameInput.value = '';
-                    fullNameInput.readOnly = false;
+                    fullNameInput.readOnly = true;
                 }
             })
             .catch(error => {
                 Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้', 'error');
                 console.error('Error fetching employee name:', error);
                 fullNameInput.value = '';
-                fullNameInput.readOnly = false;
+                fullNameInput.readOnly = true;
             });
     });
 
+    // --- Consent & Submit Button ---
     consentCheckbox.addEventListener('change', function() {
         registerBtn.disabled = !this.checked;
     });
 
-    // ✨ [แก้ไข] ฟังก์ชัน submit เพิ่มการจัดการ error case รหัสพนักงานซ้ำ
+    // --- Form Submission ---
     form.addEventListener('submit', e => {
         e.preventDefault();
 
+        if (facePhotoDataInput.value === '') {
+             Swal.fire('ยังไม่ได้ถ่ายรูป', 'กรุณาถ่ายรูปใบหน้าเพื่อยืนยันตัวตน', 'warning');
+             return;
+        }
+        
         if (!form.checkValidity()) {
             Swal.fire('ข้อมูลไม่ครบถ้วน', 'กรุณากรอกข้อมูลและทำเครื่องหมายยินยอมให้ครบถ้วนก่อน', 'warning');
             return;
         }
         
-        if (!consentCheckbox.checked) {
-             Swal.fire('ไม่ได้รับความยินยอม', 'กรุณาทำเครื่องหมายในช่องยินยอมให้ใช้ข้อมูลก่อนบันทึก', 'error');
-             return;
-        }
-
         Swal.fire({
             title: 'กำลังตรวจสอบและบันทึกข้อมูล...',
             text: 'กรุณารอสักครู่',
@@ -293,27 +396,21 @@
                             window.location.reload();
                         }
                     });
-                    
                 } else if (data.error === 'duplicate_user') {
                     Swal.fire('ลงทะเบียนแล้ว', 'คุณได้ยืนยันตัวตนไว้ในระบบแล้ว หากต้องการแก้ไขข้อมูลกรุณาติดต่อฝ่ายบุคคล', 'warning');
-                
-                // ✨ [เพิ่ม] จัดการกรณีรหัสพนักงานซ้ำ (เป็นการป้องกันขั้นที่สอง)
                 } else if (data.error === 'duplicate_employee_id') {
                     Swal.fire('ลงทะเบียนแล้ว', 'รหัสพนักงานนี้ได้ถูกลงทะเบียนแล้ว กรุณาติดต่อฝ่ายบุคคล', 'error');
-
                 } else if (data.error === 'invalid_employee_id') {
                     Swal.fire('รหัสพนักงานไม่ถูกต้อง', 'ไม่พบรหัสพนักงานของคุณในระบบ กรุณาตรวจสอบอีกครั้ง', 'error');
-
                 } else if (data.error === 'consent_required') {
                     Swal.fire('ไม่ได้รับความยินยอม', 'เกิดข้อผิดพลาด: กรุณาทำเครื่องหมายยินยอมก่อนบันทึก', 'error');
-                
                 } else {
                     throw new Error(data.error || 'Something went wrong');
                 }
             })
             .catch(error => {
                 console.error('Error!', error.message);
-                Swal.fire('เกิดข้อผิดพลาด!', 'ไม่สามารถบันทึกข้อมูลได้ กรุณาลองใหม่อีกครั้ง', 'error');
+                Swal.fire('เกิดข้อผิดพลาด!', `ไม่สามารถบันทึกข้อมูลได้: ${error.message}`, 'error');
             });
     });
 </script>
