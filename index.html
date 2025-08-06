@@ -212,7 +212,7 @@
 <script>
     // --- LIFF Initialization ---
     async function main() {
-        await liff.init({ liffId: "1654380017-Jj6lnbYq" }); // ◀️ **สำคัญ:** ใส่ LIFF ID ของคุณที่นี่
+        await liff.init({ liffId: "" }); // ◀️ **สำคัญ:** ใส่ LIFF ID ของคุณที่นี่
         if (!liff.isLoggedIn()) {
             liff.login();
         } else {
@@ -223,7 +223,7 @@
     main();
 
     // --- Form & Sheet Configuration ---
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbxq--ttPvYyVJt42LQio3YRBdeNu0bRtJDdPGKb4KnyAnimZJtd8Po_Y-sjh7yx1opx/exec'; // ◀️ **สำคัญ:** ใช้ URL ที่ได้จากการ Deploy ของคุณ
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbwL-Dgoy6so2-iMFSppikEhNuU-pLaVoYr5FbgE5hVUXntW1p0wsNtdQ_3AwfFJo6G8/exec'; // ◀️ **สำคัญ:** ใช้ URL ที่ได้จากการ Deploy ของคุณ
     const form = document.forms['hello-sheet'];
     const registerBtn = document.getElementById('registerBtn');
     const consentCheckbox = document.getElementById('consentCheck');
