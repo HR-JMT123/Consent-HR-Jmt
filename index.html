@@ -158,45 +158,15 @@
                     <input type="text" class="form-control" id="fullName" placeholder="ชื่อ-สกุล (จะแสดงอัตโนมัติเมื่อกรอกรหัสพนักงาน)" name="ชื่อ-สกุล" required readonly>
                 </div>
             </div>
-            <div class="mb-3">
-                <label for="phone" class="form-label">Phone Number</label>
-                <div class="input-group">
-                    <div class="input-group-prepend"><span class="input-group-text"><i class="fa-solid fa-phone"></i></span></div>
-                    <input type="tel" class="form-control" id="phone" placeholder="เบอร์โทรศัพท์" name="เบอร์โทร" required>
-                </div>
-            </div>
             
             <input type="hidden" name="userID" id="userID">
             
-            <div class="mb-3">
-                <label class="form-label">สแกนใบหน้า (ถ่ายรูป)</label>
-                <div id="camera-container" class="text-center bg-light p-2" style="border-radius: 10px; position: relative; overflow: hidden;">
-                    <video id="video" width="100%" height="auto" autoplay playsinline style="display: none; transform: scaleX(-1);"></video>
-                    <canvas id="canvas" style="display:none;"></canvas>
-                    <img id="face-overlay" 
-                         src="https://img2.pic.in.th/pic/-44e1002fd11c7044b.png" 
-                         alt="ตัวอย่างกรอบใบหน้า" 
-                         style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; display: none; pointer-events: none; opacity: 0.7;">
-                    <img id="photo-preview" src="" alt="รูปที่ถ่าย" style="max-width: 100%; border-radius: 10px; display: none; margin: auto;" />
-                    <div id="camera-placeholder">
-                          <i class="fas fa-camera fa-3x text-muted"></i>
-                          <p class="text-muted mt-2">กรุณากด 'เปิดกล้อง' เพื่อถ่ายรูป</p>
-                    </div>
-                </div>
-                <div class="text-center mt-2">
-                    <button type="button" id="start-camera-btn" class="btn btn-info btn-sm"> <i class="fas fa-camera"></i> เปิดกล้อง</button>
-                    <button type="button" id="capture-btn" class="btn btn-primary btn-sm" style="display: none;"> <i class="fas fa-circle-check"></i> ถ่ายรูป</button>
-                    <button type="button" id="retake-btn" class="btn btn-warning btn-sm" style="display: none;"> <i class="fas fa-redo"></i> ถ่ายใหม่</button>
-                </div>
-                <input type="hidden" name="รูปถ่ายใบหน้า" id="facePhotoData" required>
-            </div>
-
             <div class="consent-section">
-                <h5 class="consent-title"><i class="fa-solid fa-shield-halved"></i> ข้อกำหนดและความยินยอม</h5>
+                <h5 class="consent-title"><i class="fa-solid fa-shield-halved"></i> ข้อกำหนด</h5>
                 <div class="custom-control custom-switch">
                     <input type="checkbox" class="custom-control-input" id="consentCheck" name="consent" value="ยินยอม" required>
                     <label class="custom-control-label" for="consentCheck">
-                        ข้าพเจ้ายินยอมให้บริษัทเก็บ รวบรวม ใช้ข้อมูลได้แก่ ภาพใบหน้า ชื่อนามสกุล และอื่นๆที่ระบุในฟอร์มที่ใช้ในการยืนยันตัวตนพนักงาน เพื่อแจ้งข่าวสารต่างๆ สิทธิประโยชน์อื่นๆที่พนักงานได้รับผ่านช่องทางไลน์นี้
+                        การยืนยันตัวตนพนักงาน เพื่อรับข่าวสารต่างๆ สิทธิประโยชน์อื่นๆที่พนักงานได้รับผ่านช่องทาง Line : HR-JMT
                     </label>
                 </div>
             </div>
@@ -223,92 +193,13 @@
     main();
 
     // --- Form & Sheet Configuration ---
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbxipAVX02GBJnfguvVukDNWlkM7LTSKnKyuLulE2XemkzqH_DiFs6cmSseyb66RJCMY/exec'; // ◀️ **สำคัญ:** ใช้ URL ที่ได้จากการ Deploy ของคุณ
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbyozphYZkr_xRXQEgyobfAbEXobas0pbSOJygF2tMpgTNrTKJtNrcj__21XZ4l-S74u/exec'; // ◀️ **สำคัญ:** ใช้ URL ที่ได้จากการ Deploy ของคุณ
     const form = document.forms['hello-sheet'];
     const registerBtn = document.getElementById('registerBtn');
     const consentCheckbox = document.getElementById('consentCheck');
     const employeeIdInput = document.getElementById('IdEmployee');
     const fullNameInput = document.getElementById('fullName');
-
-    // --- ✨ Camera Logic (แก้ไขให้ใช้เฉพาะกล้องหน้า) ---
-    const video = document.getElementById('video');
-    const canvas = document.getElementById('canvas');
-    const facePhotoDataInput = document.getElementById('facePhotoData');
-    const photoPreview = document.getElementById('photo-preview');
-    const cameraPlaceholder = document.getElementById('camera-placeholder');
-    const faceOverlay = document.getElementById('face-overlay');
-
-    const startCameraBtn = document.getElementById('start-camera-btn');
-    const captureBtn = document.getElementById('capture-btn');
-    // const switchCameraBtn = document.getElementById('switch-camera-btn'); // ◀️ ลบตัวแปรนี้ออก
-    const retakeBtn = document.getElementById('retake-btn');
-
-    let currentStream;
-    // let facingMode = 'user'; // ◀️ ลบตัวแปรนี้ออก ไม่จำเป็นต้องสลับกล้องแล้ว
-
-    async function startCamera() {
-        if (currentStream) {
-            currentStream.getTracks().forEach(track => track.stop());
-        }
-        try {
-            const constraints = {
-                video: {
-                    // ◀️ **แก้ไข:** บังคับให้ใช้กล้องหน้าเสมอ
-                    facingMode: 'user', 
-                    width: { ideal: 480 },
-                    height: { ideal: 640 }
-                }
-            };
-            currentStream = await navigator.mediaDevices.getUserMedia(constraints);
-            video.srcObject = currentStream;
-            video.style.display = 'block';
-            faceOverlay.style.display = 'block';
-            cameraPlaceholder.style.display = 'none';
-            startCameraBtn.style.display = 'none';
-            captureBtn.style.display = 'inline-block';
-            // switchCameraBtn.style.display = 'inline-block'; // ◀️ ลบบรรทัดนี้ออก
-            retakeBtn.style.display = 'none';
-            photoPreview.style.display = 'none';
-        } catch (err) {
-            console.error("Error accessing camera: ", err);
-            Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถเข้าถึงกล้องได้ กรุณาตรวจสอบการอนุญาตให้ใช้กล้อง', 'error');
-        }
-    }
-
-    startCameraBtn.addEventListener('click', startCamera);
-
-    // ◀️ ลบ Event Listener ของปุ่มสลับกล้องออกทั้งหมด
-    // switchCameraBtn.addEventListener('click', () => { ... });
-
-    captureBtn.addEventListener('click', () => {
-        const context = canvas.getContext('2d');
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        
-        // Flip the canvas context horizontally to match the preview
-        context.translate(canvas.width, 0);
-        context.scale(-1, 1);
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
-        
-        // Convert to Base64 and set value
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
-        facePhotoDataInput.value = dataUrl;
-        photoPreview.src = dataUrl;
-
-        // Update UI
-        video.style.display = 'none';
-        faceOverlay.style.display = 'none';
-        photoPreview.style.display = 'block';
-        captureBtn.style.display = 'none';
-        // switchCameraBtn.style.display = 'none'; // ◀️ ลบบรรทัดนี้ออก
-        retakeBtn.style.display = 'inline-block';
-
-        // Stop camera stream
-        currentStream.getTracks().forEach(track => track.stop());
-    });
     
-    retakeBtn.addEventListener('click', startCamera);
-
     // --- Employee ID Verification ---
     employeeIdInput.addEventListener('blur', function() {
         const employeeId = this.value.trim();
@@ -361,11 +252,6 @@
     // --- Form Submission ---
     form.addEventListener('submit', e => {
         e.preventDefault();
-
-        if (facePhotoDataInput.value === '') {
-             Swal.fire('ยังไม่ได้ถ่ายรูป', 'กรุณาถ่ายรูปใบหน้าเพื่อยืนยันตัวตน', 'warning');
-             return;
-        }
         
         if (!form.checkValidity()) {
             Swal.fire('ข้อมูลไม่ครบถ้วน', 'กรุณากรอกข้อมูลและทำเครื่องหมายยินยอมให้ครบถ้วนก่อน', 'warning');
@@ -417,4 +303,3 @@
 
 </body>
 </html>
-
